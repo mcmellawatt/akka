@@ -57,7 +57,7 @@ abstract class ClusterShardingFailureSpecConfig(val mode: String) extends MultiN
   val second = role("second")
 
   commonConfig(ConfigFactory.parseString(s"""
-    akka.loglevel = INFO
+    akka.loglevel = DEBUG
     akka.actor.provider = "cluster"
     akka.remote.classic.log-remote-lifecycle-events = off
     akka.cluster.auto-down-unreachable-after = 0s
@@ -238,9 +238,13 @@ abstract class ClusterShardingFailureSpec(config: ClusterShardingFailureSpecConf
         //Test the Shard passivate works after a journal failure
         shard2.tell(Passivate(PoisonPill), entity21)
 
+        // FIXME rewrite as awaitAssert, and should it retry if no reply?
         awaitCond({
+          println(s"# tell Get(21)") // FIXME
           region ! Get("21")
-          expectMsgType[Value] == Value("21", 0)
+          val value = expectMsgType[Value]
+          println(s"# got $value") // FIXME
+          value == Value("21", 0)
         }, message = "Passivating did not reset Value down to 0")
 
         region ! Add("21", 1)
